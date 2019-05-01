@@ -25,9 +25,9 @@ module.exports.isTagRegistered = function isTagRegistered(name) {
 module.exports.renderAsync = async function renderAsync(tagName, component, props) {
   
   const {JSDOM} = require('jsdom')
-  const {document,Node} = new JSDOM().window
   
   if (global.document === void 0) {
+    const {document,Node} = new JSDOM().window
     global.document = document
     global.Node = Node
   }
