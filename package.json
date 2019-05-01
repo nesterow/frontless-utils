@@ -1,0 +1,11 @@
+{
+  "name": "frontless-utils",
+  "version": "0.1.1",
+  "description": "Common utils for Frontless Stack",
+  "main": "index.js",
+  "author": "Anton Nesterov",
+  "license": "MIT",
+  "dependencies": {
+    "riot": "^4.0.0-rc.2"
+  }
+}
