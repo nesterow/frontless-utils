@@ -52,6 +52,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
   }
   element.update()
   const output = element.root.outerHTML
+  
+  element.unmount()
   // cleanup()
   const {layout = 'base'} = component.exports || {}
   state = JSON.stringify(state)
