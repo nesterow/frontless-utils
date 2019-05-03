@@ -1,6 +1,6 @@
 {
   "name": "frontless-utils",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "Common utils for Frontless Stack",
   "main": "index.js",
   "author": "Anton Nesterov",

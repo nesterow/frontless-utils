@@ -1,9 +1,5 @@
 const riot = require('riot')
 
-if (typeof window === void 0) {
-  const fs = require('fs')
-  const ejs = require('ejs')
-}
 
 module.exports.isServer = (typeof window === void 0)
 
@@ -74,28 +70,38 @@ module.exports.enumerateTags = function setTagId (tag) {
   }
 }
 
+/**
+ * Take request url and return a file system path of the page
+ */
+function resolvePath(dirname, path) {
+  
+  const fs = require('fs')
+
+  const fullPath = (dirname + '/pages/' + path )
+    .replace(/\/\//g, '/').replace(/\/$/, '')
+  
+  try {
+    
+    try {
+      if (fs.statSync(fullPath + '.riot').isFile())
+        return fullPath + '.riot';
+    }
+    catch (e) { }
+
+    if (fs.statSync(fullPath + '/index.riot').isFile())
+      return fullPath + '/index.riot';
+
+  } catch (e) {
+    return false;
+  }
+
+}
+module.exports.resolvePath =  resolvePath
 
 module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
-
-  function resolvePath(path) {
-    const fullPath = (dirname + '/pages/' + path )
-      .replace(/\/\//g, '/').replace(/\/$/, '')
-    try {
-      
-      try {
-        if (fs.statSync(fullPath + '.riot').isFile())
-          return fullPath + '.riot';
-      }
-      catch (e) { }
   
-      if (fs.statSync(fullPath + '/index.riot').isFile())
-        return fullPath + '/index.riot';
-  
-    } catch (e) {
-      return false;
-    }
-  
-  }
+  const ejs = require('ejs')
+  const {renderAsync, resolvePath} = module.exports;
 
   req._res = res;
   if (req.headers.accept &&
@@ -105,7 +111,7 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
 
   try {
     const path = resolvePath(dirname, req.params [0])
-    const component = require(dirname + '/' + (path || 'pages/errors/404.riot')).default
+    const component = require((path || '/pages/errors/404.riot')).default
     const {output, state, layout} = await renderAsync('section', component, { req, });
     
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
@@ -116,7 +122,7 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
     })
   } catch(e) {
 
-    const component = require(dirname + '/' + ('pages/errors/400.riot')).default
+    const component = require(dirname + ('/pages/errors/400.riot')).default
     console.log(e)
     const {output, state, layout} = await renderAsync('section', component, { req, stack: (e.stack || e.message) });
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
