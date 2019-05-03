@@ -138,7 +138,7 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
 
   try {
     const path = resolvePath(dirname, req.params [0])
-    const component = require((path || '/pages/errors/404.riot')).default
+    const component = require((path || dirname + '/pages/errors/404.riot')).default
     const {output, state, layout} = await renderAsync('section', component, { req, });
     
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
