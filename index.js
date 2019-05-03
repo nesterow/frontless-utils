@@ -127,14 +127,5 @@ module.exports.FrontlessMiddleware = async (req, res, next) => {
       }
       res.status(400).end(data)
     })
+  }
 }
-
-
-
-
-
-
-
-
-
-
