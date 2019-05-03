@@ -2,6 +2,7 @@ const riot = require('riot')
 
 if (typeof window === void 0) {
   const fs = require('fs')
+  const ejs = require('ejs')
 }
 
 module.exports.isServer = (typeof window === void 0)
@@ -76,7 +77,7 @@ module.exports.enumerateTags = function setTagId (tag) {
 /**
  * Take request url and return a file system path of the page
  */
-module.exports.resolvePath = function resolvePath(dirname, path) {
+function resolvePath(dirname, path) {
   const fullPath = (dirname + '/pages/' + path )
     .replace(/\/\//g, '/').replace(/\/$/, '')
   try {
@@ -95,7 +96,7 @@ module.exports.resolvePath = function resolvePath(dirname, path) {
   }
 
 }
-
+module.exports.resolvePath =  resolvePath
 
 module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
 
