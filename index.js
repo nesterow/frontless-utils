@@ -74,31 +74,28 @@ module.exports.enumerateTags = function setTagId (tag) {
   }
 }
 
-/**
- * Take request url and return a file system path of the page
- */
-function resolvePath(dirname, path) {
-  const fullPath = (dirname + '/pages/' + path )
-    .replace(/\/\//g, '/').replace(/\/$/, '')
-  try {
-    
-    try {
-      if (fs.statSync(fullPath + '.riot').isFile())
-        return fullPath + '.riot';
-    }
-    catch (e) { }
-
-    if (fs.statSync(fullPath + '/index.riot').isFile())
-      return fullPath + '/index.riot';
-
-  } catch (e) {
-    return false;
-  }
-
-}
-module.exports.resolvePath =  resolvePath
 
 module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
+
+  function resolvePath(path) {
+    const fullPath = (dirname + '/pages/' + path )
+      .replace(/\/\//g, '/').replace(/\/$/, '')
+    try {
+      
+      try {
+        if (fs.statSync(fullPath + '.riot').isFile())
+          return fullPath + '.riot';
+      }
+      catch (e) { }
+  
+      if (fs.statSync(fullPath + '/index.riot').isFile())
+        return fullPath + '/index.riot';
+  
+    } catch (e) {
+      return false;
+    }
+  
+  }
 
   req._res = res;
   if (req.headers.accept &&
