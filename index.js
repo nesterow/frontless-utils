@@ -17,6 +17,19 @@ const riot = require('riot')
 
 module.exports.isServer = (typeof window === void 0)
 
+/**
+* Serialize a form to object
+* @param {HTMLFormElement} element - a <form> element
+* @return {object}
+*/
+module.exports.serializeForm = (element) => {
+ let result = {};
+ new FormData(element).forEach((value, key) => {
+   result[key] = value;
+ });
+ return result;
+}
+
 /** Simple hydrate method. Not used at the time */
 module.exports.hydrate = function hydrate(el, component, props) {
   const clone = el.cloneNode(false)
@@ -33,7 +46,7 @@ module.exports.isTagRegistered = function isTagRegistered(name) {
  * Render a riot tag.
  * This method resolves all `fetch()` operations including components children
  * TODO: A global store, maybe Mobx?
- * @return Promise<{output: String, state: Object, layout: string}>
+ * @return {Promise<{output: String, state: Object, layout: string}>}
  * */
 module.exports.renderAsync = async function renderAsync(tagName, component, props) {
    
