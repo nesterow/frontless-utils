@@ -15,7 +15,7 @@
 const riot = require('riot')
 
 
-module.exports.isServer = (typeof window === void 0)
+module.exports.isServer = (typeof window === 'undefined')
 
 /**
 * Serialize a form to object
