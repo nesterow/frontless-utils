@@ -1,15 +1,12 @@
 const riot = require('riot')
 
 if (typeof window === void 0) {
-  (function(moduleWrapCopy) {
-    riot.wrap = function(script) {
-      script = "console.log('debug');" + script
-      return moduleWrapCopy(script);
-    };
-  }(riot.wrap))
+  const fs = require('fs')
 }
 
-/** Simple hydrate method */
+module.exports.isServer = (typeof window === void 0)
+
+/** Simple hydrate method. Not used at the time */
 module.exports.hydrate = function hydrate(el, component, props) {
   const clone = el.cloneNode(false)
   el.parentNode.replaceChild(clone, el)
@@ -21,12 +18,16 @@ module.exports.isTagRegistered = function isTagRegistered(name) {
   return riot.__.globals.COMPONENTS_IMPLEMENTATION_MAP.has(name);
 }
 
-/** Render a riot tag */
+/** 
+ * Render a riot tag.
+ * This method resolves all `fetch()` operations including components children
+ * TODO: A global store, maybe Mobx?
+ * @return Promise<{output: String, state: Object, layout: string}>
+ * */
 module.exports.renderAsync = async function renderAsync(tagName, component, props) {
-  
-  const {JSDOM} = require('jsdom')
-  
+   
   if (global.document === void 0) {
+    const {JSDOM} = require('jsdom')
     const {document,Node} = new JSDOM().window
     global.document = document
     global.Node = Node
@@ -61,11 +62,79 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
 }
 
 let TAG_COUNT = {}
+/**
+ * Naive unique IDs for components.
+ * Enumerates component by name
+ */
 module.exports.enumerateTags = function setTagId (tag) {
   if (tag.id === void 0) {
     TAG_COUNT [tag.name] = (TAG_COUNT [tag.name] || 0) + 1
     tag.id = tag.name + TAG_COUNT [tag.name]
   }
 }
+
+/**
+ * Take request url and return a file system path of the page
+ */
+module.exports.resolvePath = function resolvePath(path) {
+  const fullPath = ('pages/' + path )
+    .replace(/\/\//g, '/').replace(/\/$/, '')
+  try {
+    
+    try {
+      if (fs.statSync(fullPath + '.riot').isFile())
+        return fullPath + '.riot';
+    }
+    catch (e) { }
+
+    if (fs.statSync(fullPath + '/index.riot').isFile())
+      return fullPath + '/index.riot';
+
+  } catch (e) {
+    return false;
+  }
+
+}
+
+
+module.exports.FrontlessMiddleware = async (req, res, next) => {
+
+  req._res = res;
+  if (req.headers.accept &&
+      req.headers.accept.includes('/json')) {
+    return next();
+  }
+
+  try {
+    const path = resolvePath(req.params [0])
+    const component = require('./' + (path || 'pages/errors/404.riot')).default
+    const {output, state, layout} = await renderAsync('section', component, { req, });
+    
+    ejs.renderFile(`./pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+      if (err) {
+        return res.status(500).end(err)
+      }
+      res.status(path ? 200 : 404).end(data)
+    })
+  } catch(e) {
+
+    const component = require('./' + ('pages/errors/400.riot')).default
+    console.log(e)
+    const {output, state, layout} = await renderAsync('section', component, { req, stack: (e.stack || e.message) });
+    ejs.renderFile(`./pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+      if (err) {
+        return res.status(500).end(err)
+      }
+      res.status(400).end(data)
+    })
+}
+
+
+
+
+
+
+
+
 
 
