@@ -76,8 +76,8 @@ module.exports.enumerateTags = function setTagId (tag) {
 /**
  * Take request url and return a file system path of the page
  */
-module.exports.resolvePath = function resolvePath(path) {
-  const fullPath = ('pages/' + path )
+module.exports.resolvePath = function resolvePath(dirname, path) {
+  const fullPath = (dirname + '/pages/' + path )
     .replace(/\/\//g, '/').replace(/\/$/, '')
   try {
     
@@ -97,7 +97,7 @@ module.exports.resolvePath = function resolvePath(path) {
 }
 
 
-module.exports.FrontlessMiddleware = async (req, res, next) => {
+module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
 
   req._res = res;
   if (req.headers.accept &&
@@ -106,11 +106,11 @@ module.exports.FrontlessMiddleware = async (req, res, next) => {
   }
 
   try {
-    const path = resolvePath(req.params [0])
-    const component = require('./' + (path || 'pages/errors/404.riot')).default
+    const path = resolvePath(dirname, req.params [0])
+    const component = require(dirname + '/' + (path || 'pages/errors/404.riot')).default
     const {output, state, layout} = await renderAsync('section', component, { req, });
     
-    ejs.renderFile(`./pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
@@ -118,10 +118,10 @@ module.exports.FrontlessMiddleware = async (req, res, next) => {
     })
   } catch(e) {
 
-    const component = require('./' + ('pages/errors/400.riot')).default
+    const component = require(dirname + '/' + ('pages/errors/400.riot')).default
     console.log(e)
     const {output, state, layout} = await renderAsync('section', component, { req, stack: (e.stack || e.message) });
-    ejs.renderFile(`./pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
