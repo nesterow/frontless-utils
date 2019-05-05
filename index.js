@@ -89,6 +89,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
   // cleanup()
   const {layout = 'base'} = component.exports || {}
   state = JSON.stringify(state)
+  shared = JSON.stringify(shared)
   return Promise.resolve({output, state, shared, layout})
 }
 
@@ -154,9 +155,9 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = []) => async (
     req.params.args = parseArgs(req.params.args)
     const path = resolvePath(dirname, req.params [0])
     const component = require((path || dirname + '/pages/errors/404.riot')).default
-    const {output, state, layout} = await renderAsync('section', component, { req, }, sharedAttributes)
+    const {output, state, shared, layout} = await renderAsync('section', component, { req, }, sharedAttributes)
     
-    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state, shared}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
@@ -167,7 +168,7 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = []) => async (
     const component = require(dirname + ('/pages/errors/400.riot')).default
     console.log(e)
     const {output, state, layout} = await renderAsync('section', component, { req, stack: (e.stack || e.message) });
-    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
+    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state, shared}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
