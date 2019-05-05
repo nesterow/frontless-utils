@@ -13,11 +13,11 @@
 */
 
 const riot = require('riot')
-const jss = require('jss').default
+const JSS = require('jss').default
 const jssPreset = require('jss-preset-default').default
 const jssPluginNested = require('jss-plugin-nested').default
-jss.setup(jssPreset())
-jss.use(jssPluginNested)
+JSS.setup(jssPreset())
+JSS.use(jssPluginNested)
 
 module.exports.isServer = (typeof window === 'undefined')
 
@@ -174,6 +174,34 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
 }
 
 module.exports.jss = (jssObject) => {
-  const {classes} = jss.createStyleSheet(jssObject).attach()
+  const {classes} = JSS.createStyleSheet(jssObject).attach()
   return classes
+}
+
+module.exports.styled = function styled(obj){
+  if (!this.styles) {
+    this.styles = {}
+  }
+  return Object.keys(obj)
+      .filter((e)=> this.styles[e] && obj[e])
+      .map((e) => this.styles[e])
+      .join(' ')
+}
+
+module.exports.withJSS = function(impl, initialStyles) {
+  const {styled, jss} = module.exports
+  impl.styled = styled.bind(impl)
+
+  if (initialStyles) {
+    impl.styles = jss(initialStyles)
+  }
+  if (impl.styles) {
+    impl.styles = jss(impl.styles)
+  }
+
+  impl.setStyles = function(jssObj) {
+    this.styles = jss(jssObj)
+    this.update()
+  }
+  .bind(impl)
 }
