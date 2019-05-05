@@ -52,7 +52,7 @@ module.exports.isTagRegistered = function isTagRegistered(name) {
  * TODO: A global store, maybe Mobx?
  * @return {Promise<{output: String, state: Object, layout: string}>}
  * */
-module.exports.renderAsync = async function renderAsync(tagName, component, props) {
+module.exports.renderAsync = async function renderAsync(tagName, component, props, sharedAttributes) {
    
   if (global.document === void 0) {
     const {JSDOM} = require('jsdom')
@@ -65,10 +65,12 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
   const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
   const elements = element.$$('*')
 
-  let state = {};
+  let state = {}
+  let shared = {}
   if (element && element.fetch) {
     await element.fetch(props)
     state[element.id || component.name] = element.state
+    shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
   }
 
   for (let i in elements) {
@@ -77,6 +79,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     if (instance && instance.fetch) {
       await instance.fetch(props)
       state[instance.id || instance.name] = instance.state
+      shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
     }
   }
   element.update()
@@ -86,7 +89,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
   // cleanup()
   const {layout = 'base'} = component.exports || {}
   state = JSON.stringify(state)
-  return Promise.resolve({output, state, layout})
+  return Promise.resolve({output, state, shared, layout})
 }
 
 let TAG_COUNT = {}
@@ -136,7 +139,7 @@ module.exports.parseArgs = (args) => {
   return args.split(';').map((e) => e.trim())
 }
 
-module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
+module.exports.FrontlessMiddleware = (dirname, sharedAttributes = []) => async (req, res, next) => {
   
   const ejs = require('ejs')
   const {renderAsync, resolvePath, parseArgs} = module.exports;
@@ -151,7 +154,7 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
     req.params.args = parseArgs(req.params.args)
     const path = resolvePath(dirname, req.params [0])
     const component = require((path || dirname + '/pages/errors/404.riot')).default
-    const {output, state, layout} = await renderAsync('section', component, { req, })
+    const {output, state, layout} = await renderAsync('section', component, { req, }, sharedAttributes)
     
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
       if (err) {
