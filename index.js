@@ -125,10 +125,17 @@ function resolvePath(dirname, path) {
 }
 module.exports.resolvePath =  resolvePath
 
+module.exports.parseArgs = (args) => {
+  if (!args) {
+    return
+  }
+  return args.split(';').map((e) => e.trim())
+}
+
 module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
   
   const ejs = require('ejs')
-  const {renderAsync, resolvePath} = module.exports;
+  const {renderAsync, resolvePath, parseArgs} = module.exports;
 
   req._res = res;
   if (req.headers.accept &&
@@ -137,9 +144,10 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
   }
 
   try {
+    req.params.args = parseArgs(req.params.args)
     const path = resolvePath(dirname, req.params [0])
     const component = require((path || dirname + '/pages/errors/404.riot')).default
-    const {output, state, layout} = await renderAsync('section', component, { req, });
+    const {output, state, layout} = await renderAsync('section', component, { req, })
     
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state}, null, function(err, data) {
       if (err) {
