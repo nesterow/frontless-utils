@@ -67,8 +67,11 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
 
   let state = {}
   let shared = {}
-  if (element && element.fetch) {
-    await element.fetch(props)
+  if (element) {
+
+    if (element.fetch)
+      await element.fetch(props);
+
     state[element.id || component.name] = element.state
     shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
   }
@@ -76,8 +79,9 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
   for (let i in elements) {
     const el = elements [i]
     let instance = el [prop]
-    if (instance && instance.fetch) {
-      await instance.fetch(props)
+    if (instance) {
+      if (instance.fetch)
+        await instance.fetch(props);
       state[instance.id || instance.name] = instance.state
       shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
     }
