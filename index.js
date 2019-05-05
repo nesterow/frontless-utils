@@ -13,7 +13,9 @@
 */
 
 const riot = require('riot')
-
+const jss = require('jss').default
+const jssPreset = require('jss-preset-default').default
+jss.setup(jssPreset())
 
 module.exports.isServer = (typeof window === 'undefined')
 
@@ -167,4 +169,9 @@ module.exports.FrontlessMiddleware = (dirname) => async (req, res, next) => {
       res.status(400).end(data)
     })
   }
+}
+
+module.exports.jss = (jssObject) => {
+  const {classes} = jss.createStyleSheet(jssObject).attach()
+  return classes
 }
