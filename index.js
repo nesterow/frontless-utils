@@ -179,12 +179,12 @@ module.exports.jss = (jssObject) => {
 }
 
 module.exports.styled = function styled(obj){
-  if (!this.styles) {
-    this.styles = {}
+  if (!this.classes) {
+    this.classes = {}
   }
   return Object.keys(obj)
-      .filter((e)=> this.styles[e] && obj[e])
-      .map((e) => this.styles[e])
+      .filter((e)=> this.classes[e] && obj[e])
+      .map((e) => this.classes[e])
       .join(' ')
 }
 
@@ -196,11 +196,12 @@ module.exports.withJSS = function(impl, initialStyles) {
     impl.styles = jss(initialStyles)
   }
   if (impl.styles) {
-    impl.styles = jss(impl.styles)
+    impl.classes = jss(impl.styles)
   }
 
   impl.setStyles = function(jssObj) {
     this.styles = jss(jssObj)
+    impl.classes = jss(impl.styles)
     this.update()
   }
   .bind(impl)
