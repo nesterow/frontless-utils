@@ -15,7 +15,9 @@
 const riot = require('riot')
 const jss = require('jss').default
 const jssPreset = require('jss-preset-default').default
+const jssPluginNested = require('jss-plugin-nested').default
 jss.setup(jssPreset())
+jss.use(jssPluginNested)
 
 module.exports.isServer = (typeof window === 'undefined')
 
