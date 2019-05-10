@@ -13,11 +13,6 @@
 */
 
 const riot = require('riot')
-const JSS = require('jss').default
-const jssPreset = require('jss-preset-default').default
-const jssPluginNested = require('jss-plugin-nested').default
-JSS.setup(jssPreset())
-JSS.use(jssPluginNested)
 
 module.exports.isServer = (typeof window === 'undefined')
 
@@ -179,38 +174,4 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = []) => async (
       res.status(400).end(data)
     })
   }
-}
-
-module.exports.jss = (jssObject) => {
-  const {classes} = JSS.createStyleSheet(jssObject).attach()
-  return classes
-}
-
-module.exports.styled = function styled(obj){
-  if (!this.classes) {
-    this.classes = {}
-  }
-  return Object.keys(obj)
-      .filter((e)=> this.classes[e] && obj[e])
-      .map((e) => this.classes[e])
-      .join(' ')
-}
-
-module.exports.withJSS = function(impl, initialStyles) {
-  const {styled, jss} = module.exports
-  impl.styled = styled.bind(impl)
-
-  if (initialStyles) {
-    impl.styles = jss(initialStyles)
-  }
-  if (impl.styles) {
-    impl.classes = jss(impl.styles)
-  }
-
-  impl.setStyles = function(jssObj) {
-    this.styles = jss(jssObj)
-    impl.classes = jss(impl.styles)
-    this.update()
-  }
-  .bind(impl)
 }
