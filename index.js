@@ -13,6 +13,7 @@
 */
 
 const riot = require('riot')
+const qs = require('querystring')
 
 module.exports.isServer = (typeof window === 'undefined')
 
@@ -88,8 +89,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     element.unmount()
     // cleanup()
     const {layout = 'base'} = component.exports || {}
-    state = JSON.stringify(state)
-    shared = JSON.stringify(shared)
+    state = qs.escape(JSON.stringify(state))
+    shared = qs.escape(JSON.stringify(shared))
     return Promise.resolve({output, state, shared, layout})
   }
   catch(e) {
