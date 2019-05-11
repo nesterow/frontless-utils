@@ -55,41 +55,46 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     global.document = document
     global.Node = Node
   }
-  const root = document.createElement(tagName)
-  const element = riot.component(component)(root, props)
-  const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
-  const elements = element.$$('*')
+  try {
+    const root = document.createElement(tagName)
+    const element = riot.component(component)(root, props)
+    const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
+    const elements = element.$$('*')
 
-  let state = {}
-  let shared = {}
-  if (element) {
+    let state = {}
+    let shared = {}
+    if (element) {
 
-    if (element.fetch)
-      await element.fetch(props);
+      if (element.fetch)
+        await element.fetch(props);
 
-    state[element.id || component.name] = element.state
-    shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
-  }
-
-  for (let i in elements) {
-    const el = elements [i]
-    let instance = el [prop]
-    if (instance) {
-      if (instance.fetch)
-        await instance.fetch(props);
-      state[instance.id || instance.name] = instance.state
-      shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
+      state[element.id || component.name] = element.state
+      shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
     }
+
+    for (let i in elements) {
+      const el = elements [i]
+      let instance = el [prop]
+      if (instance) {
+        if (instance.fetch)
+          await instance.fetch(props);
+        state[instance.id || instance.name] = instance.state
+        shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
+      }
+    }
+    element.update()
+    const output = element.root.outerHTML
+    
+    element.unmount()
+    // cleanup()
+    const {layout = 'base'} = component.exports || {}
+    state = JSON.stringify(state)
+    shared = JSON.stringify(shared)
+    return Promise.resolve({output, state, shared, layout})
   }
-  element.update()
-  const output = element.root.outerHTML
-  
-  element.unmount()
-  // cleanup()
-  const {layout = 'base'} = component.exports || {}
-  state = JSON.stringify(state)
-  shared = JSON.stringify(shared)
-  return Promise.resolve({output, state, shared, layout})
+  catch(e) {
+    return Promise.reject(e)
+  }
 }
 
 let TAG_COUNT = {}
@@ -164,9 +169,9 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = []) => async (
     })
   } catch(e) {
 
-    const component = require(dirname + ('/pages/errors/400.riot')).default
+    const error = require(dirname + ('/pages/errors/400.riot')).default
     console.log(e)
-    const {output, state, layout} = await renderAsync('section', component, { req, stack: (e.stack || e.message) });
+    const {output, state, layout, shared} = await renderAsync('section', error, { req, stack: (e.stack || e.message) }, sharedAttributes);
     ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state, shared}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
