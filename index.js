@@ -141,8 +141,10 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     }
     element.update()
     
-    element.$$('input,textarea').map((e) => {
-      if (e.value) e.setAttribute('value', e.value);
+   
+    element.$$('input,textarea,select,option').map((el) => {
+      const value = el.type !== 'password' ? el.value : ''
+      el.setAttribute('value', value || '')
     })
 
     const output = element.root.outerHTML
