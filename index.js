@@ -30,6 +30,55 @@ module.exports.serializeForm = (element) => {
  return result;
 }
 
+const escapeArg = (str = '') => {
+  return str
+    .replace(/@/gi, '{~1}')
+    .replace(/;/gi, '{~2}')
+}
+
+const unescapeArg = (str = '') => {
+  return str
+    .replace(/\{\~1\}/gi, '@')
+    .replace(/\{\~2\}/gi, ';')
+}
+
+const getURL = (argsuments = [], query = {}, pathname = null) => {
+  const args = argsuments.map( e => escapeArg(e)).join(';')
+  const path = (pathname || location.pathname).split('@') [0]
+  return `${path}@${args}?${qs.stringify(query)}`
+}
+
+module.exports.parseArgs = (args) => {
+  if (!args) {
+    return
+  }
+  return args.split(';').map((e) => unescapeArg(e.trim()))
+}
+
+const pushState = (argsuments = [], query = {}) => {
+  if (typeof window !== 'undefined') 
+    history.pushState({}, null, getURL(argsuments, query))
+}
+
+/** redirect to specific location. */
+module.exports.withRouter = (component) => {
+  function redirect(path, argsuments = [], query = {}) {
+    if (typeof window === 'undefined') {
+      const onServer = component.onServer || (() => {});
+      component.onServer = (req, res, next) => {
+        onServer(req, res, next)
+        res.set('Turbolinks-Location', path)
+        res.redirect(301, getURL(argsuments, query, path))
+      }
+    } else if (window.Turbolinks){
+      Turbolinks.visit(getURL(argsuments, query, path))
+    }
+  }
+  component.redirect = redirect.bind(component)
+  component.pushState = pushState
+  
+}
+
 /** Simple hydrate method. Not used at the time */
 module.exports.hydrate = function hydrate(el, component, props) {
   const clone = el.cloneNode(false)
@@ -49,7 +98,7 @@ module.exports.isTagRegistered = function isTagRegistered(name) {
  * @return {Promise<{output: String, state: Object, layout: string}>}
  * */
 module.exports.renderAsync = async function renderAsync(tagName, component, props, sharedAttributes) {
-   
+  
   if (global.document === void 0) {
     const {JSDOM} = require('jsdom')
     const {document,Node} = new JSDOM().window
@@ -69,6 +118,9 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       if (element.fetch)
         await element.fetch(props);
 
+      if (element.onServer)
+        element.onServer(props.req, props.res, props.next);
+
       state[element.id || component.name] = element.state
       shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
     }
@@ -79,6 +131,10 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       if (instance) {
         if (instance.fetch)
           await instance.fetch(props);
+
+        if (instance.onServer)
+          instance.onServer(props.req, props.res, props.next);
+
         state[instance.id || instance.name] = instance.state
         shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
       }
@@ -143,12 +199,6 @@ function resolvePath(dirname, path) {
 }
 module.exports.resolvePath =  resolvePath
 
-module.exports.parseArgs = (args) => {
-  if (!args) {
-    return
-  }
-  return args.split(';').map((e) => e.trim())
-}
 
 const PLUGIN_REGISTRY = [];
 
@@ -210,7 +260,7 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = [], pluginOpts
     req.params.args = parseArgs(req.params.args)
     const path = resolvePath(pluginOpts.__dirname || dirname, req.params [0])
     const component = require((path || dirname + '/pages/errors/404.riot')).default
-    const {output, state, shared, layout} = await renderAsync('section', component, { req, }, sharedAttributes)
+    const {output, state, shared, layout} = await renderAsync('section', component, { req, res, next, }, sharedAttributes)
     
     ejs.renderFile(pluginOpts.layoutPath || (dirname + `/pages/layout/${layout}.ejs`), {req, output, state, shared}, null, function(err, data) {
       if (err) {
@@ -231,3 +281,6 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = [], pluginOpts
     })
   }
 }
+
+riot.install(module.exports.withRouter)
+
