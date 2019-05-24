@@ -84,6 +84,11 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       }
     }
     element.update()
+    
+    element.$$('input,textarea').map((e) => {
+      if (e.value) e.setAttribute('value', e.value);
+    })
+
     const output = element.root.outerHTML
     
     element.unmount()
