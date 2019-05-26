@@ -114,7 +114,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     let state = {}
     let shared = {}
     if (element) {
-
+      element.req = props.req;
+      element.res = props.res;
       if (element.fetch)
         await element.fetch(props);
 
@@ -129,6 +130,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       const el = elements [i]
       let instance = el [prop]
       if (instance) {
+        instance.req = props.req;
+        instance.res = props.res;
         if (instance.fetch)
           await instance.fetch(props);
 
