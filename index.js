@@ -134,12 +134,13 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
         instance.res = props.res;
         if (instance.fetch)
           await instance.fetch(props);
-
+        
         if (instance.onServer)
           instance.onServer(props.req, props.res, props.next);
 
         state[instance.id || instance.name] = instance.state
         shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
+        instance.update()
       }
     }
     element.update()
@@ -154,7 +155,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     
     element.unmount()
     // cleanup()
-    const {layout = 'base'} = component.exports || {}
+    const {layout = 'base'} = typeof component.exports === 'function' ? component.exports() : (component.exports || {})
     state = qs.escape(JSON.stringify(state))
     shared = qs.escape(JSON.stringify(shared))
     return Promise.resolve({output, state, shared, layout})
