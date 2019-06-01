@@ -165,8 +165,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     element.unmount()
     // cleanup()
     const {layout = 'base'} = typeof component.exports === 'function' ? component.exports() : (component.exports || {})
-    state = qs.escape(JSON.stringify(state))
-    shared = qs.escape(JSON.stringify(shared))
+    state = JSON.stringify(state)
+    shared = JSON.stringify(shared)
     return Promise.resolve({output, state, shared, layout})
   }
   catch(e) {
