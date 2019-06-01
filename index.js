@@ -22,10 +22,12 @@ module.exports.isServer = (typeof window === 'undefined')
 * @param {HTMLFormElement} element - a <form> element
 * @return {object}
 */
-module.exports.serializeForm = (element) => {
+module.exports.serializeForm = (element, omit = []) => {
  let result = {};
  new FormData(element).forEach((value, key) => {
-   result[key] = value;
+   if (!omit.includes(key)) {
+     result[key] = value;
+   }
  });
  return result;
 }
@@ -45,7 +47,8 @@ const unescapeArg = (str = '') => {
 const getURL = (argsuments = [], query = {}, pathname = null) => {
   const args = argsuments.map( e => escapeArg(e)).join(';')
   const path = (pathname || location.pathname).split('@') [0]
-  return `${path}@${args}?${qs.stringify(query)}`
+  console.log(args)
+  return `${path}${args.trim() ? '@' + args : ''}?${qs.stringify(query)}`
 }
 
 module.exports.parseArgs = (args) => {
@@ -141,10 +144,16 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
         state[instance.id || instance.name] = instance.state
         shared[instance.id || instance.name] = sharedAttributes.map((name) => ({name, data: instance [name]}))
         instance.update()
+        
+        if (instance.onRendered) {
+          instance.onRendered(props)
+        }
       }
     }
     element.update()
-    
+    if (element.onRendered) {
+      element.onRendered(props)
+    }
    
     element.$$('input,textarea,select,option').map((el) => {
       const value = el.type !== 'password' ? el.value : ''
