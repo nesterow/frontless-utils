@@ -112,7 +112,6 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
     const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
-    const elements = element.$$('*')
 
     let state = {}
     let shared = {}
@@ -128,6 +127,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       state[element.id || component.name] = element.state
       shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
     }
+
+    const elements = element.$$('*')
 
     for (let i in elements) {
       const el = elements [i]
@@ -296,6 +297,3 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = [], pluginOpts
     })
   }
 }
-
-riot.install(module.exports.withRouter)
-
