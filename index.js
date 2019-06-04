@@ -14,6 +14,7 @@
 
 const riot = require('riot')
 const qs = require('querystring')
+const {SheetsRegistry} = require('jss')
 
 module.exports.isServer = (typeof window === 'undefined')
 
@@ -112,6 +113,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
     const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
+    const stylesheet = new SheetsRegistry()
 
     let state = {}
     let shared = {}
@@ -126,6 +128,10 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
 
       state[element.id || component.name] = element.state
       shared[element.id || component.name] = sharedAttributes.map((name) => ({name, data: element [name]}))
+      
+      if (element.stylesheet) {
+        stylesheet.add(element.stylesheet)
+      }
     }
 
     const elements = element.$$('*')
@@ -149,6 +155,9 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
         if (instance.onRendered) {
           instance.onRendered(props)
         }
+        if (instance.stylesheet) {
+          stylesheet.add(instance.stylesheet)
+        }
       }
     }
     element.update()
@@ -160,7 +169,8 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
       const value = el.type !== 'password' ? el.value : ''
       el.setAttribute('value', value || '')
     })
-
+    
+    const head = document.head.innerHTML
     const output = element.root.outerHTML
     
     element.unmount()
@@ -168,7 +178,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     const {layout = 'base'} = typeof component.exports === 'function' ? component.exports() : (component.exports || {})
     state = JSON.stringify(state)
     shared = JSON.stringify(shared)
-    return Promise.resolve({output, state, shared, layout})
+    return Promise.resolve({output, state, shared, layout, head, stylesheet: stylesheet.toString() })
   }
   catch(e) {
     return Promise.reject(e)
@@ -276,9 +286,9 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = [], pluginOpts
     req.params.args = parseArgs(req.params.args)
     const path = resolvePath(pluginOpts.__dirname || dirname, req.params [0])
     const component = require((path || dirname + '/pages/errors/404.riot')).default
-    const {output, state, shared, layout} = await renderAsync('section', component, { req, res, next, }, sharedAttributes)
+    const {output, state, shared, layout, head, stylesheet} = await renderAsync('section', component, { req, res, next, }, sharedAttributes)
     
-    ejs.renderFile(pluginOpts.layoutPath || (dirname + `/pages/layout/${layout}.ejs`), {req, output, state, shared}, null, function(err, data) {
+    ejs.renderFile(pluginOpts.layoutPath || (dirname + `/pages/layout/${layout}.ejs`), {req, output, state, shared, head, stylesheet}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
@@ -288,8 +298,8 @@ module.exports.FrontlessMiddleware = (dirname, sharedAttributes = [], pluginOpts
 
     const error = require(dirname + ('/pages/errors/400.riot')).default
     console.log(e)
-    const {output, state, layout, shared} = await renderAsync('section', error, { req, stack: (e.stack || e.message) }, sharedAttributes);
-    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state, shared}, null, function(err, data) {
+    const {output, state, layout, shared, head, stylesheet} = await renderAsync('section', error, { req, stack: (e.stack || e.message) }, sharedAttributes);
+    ejs.renderFile(dirname + `/pages/layout/${layout}.ejs`, {req, output, state, shared, head, stylesheet}, null, function(err, data) {
       if (err) {
         return res.status(500).end(err)
       }
