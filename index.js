@@ -178,7 +178,7 @@ module.exports.renderAsync = async function renderAsync(tagName, component, prop
     const {layout = 'base'} = typeof component.exports === 'function' ? component.exports() : (component.exports || {})
     state = JSON.stringify(state)
     shared = JSON.stringify(shared)
-    const style = stylesheet.registry.reduce((a, b) => a.toString() + b.toString(), '')
+    const style = stylesheet.toString()
     return Promise.resolve({output, state, shared, layout, head, stylesheet: style })
   }
   catch(e) {
