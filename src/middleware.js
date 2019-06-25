@@ -1,5 +1,5 @@
 const renderAsync = require('./render')
-const utils = require('.')
+const utils = require('../browser')
 
 
 /**
