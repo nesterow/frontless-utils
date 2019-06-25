@@ -12,9 +12,9 @@
 @Author: Anton Nesterov <arch.nesterov@gmail.com>
 */
 
-const babel = require('src/babel')
-const render = require('src/render')
-const Frontless = require('src/middleware')
+const babel = require('./src/babel')
+const render = require('./src/render')
+const Frontless = require('./src/middleware')
 
 const isBrowser = typeof window !== 'undefined'
 const {serializeForm} = require('./browser')
