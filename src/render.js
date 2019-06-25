@@ -1,18 +1,25 @@
 const riot = require('riot')
 const {SheetsRegistry} = require('jss')
 const xss = require("xss")
-const DOM = require('jsdom-global')
 const {CSS_BY_NAME} = riot.__.cssManager;
 /** 
  * Render a riot tag.
  * This method resolves all `fetch()` operations including components children
- * TODO: A global store, maybe Mobx?
  * @return {Promise<{output: String, state: Object, layout: string}>}
  * */
 module.exports = async function renderAsync(tagName, component, props, sharedAttributes) {
   
-  const cleanup = DOM()
-
+  const cleanup = () => {
+    global.document = undefined
+    global.window = undefined
+    global.Node = undefined
+  }
+  if (global.document === void 0) {
+    const {JSDOM} = require('jsdom')
+    const {document,Node} = new JSDOM().window
+    global.document = document
+    global.Node = Node
+  }
   try {
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
