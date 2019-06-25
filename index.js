@@ -16,8 +16,14 @@ const babel = require('src/babel')
 const render = require('src/render')
 const Frontless = require('src/middleware')
 
+const isBrowser = typeof window !== 'undefined'
+const {serializeForm} = require('./browser')
+
 module.exports = {
   babel,
   render,
-  Frontless
+  Frontless,
+  isBrowser,
+  isServer: !isBrowser,
+  serializeForm
 }
