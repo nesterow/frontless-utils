@@ -10,9 +10,6 @@ const {CSS_BY_NAME} = riot.__.cssManager;
 module.exports = async function renderAsync(tagName, component, props, sharedAttributes) {
   
   const cleanup = () => {
-    global.document = undefined
-    global.window = undefined
-    global.Node = undefined
     CSS_BY_NAME.clear()
   }
   if (global.document === void 0) {
