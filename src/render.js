@@ -10,6 +10,8 @@ const {CSS_BY_NAME} = riot.__.cssManager;
 module.exports = async function renderAsync(tagName, component, props, sharedAttributes) {
   
   const cleanup = () => {
+    document.__GLOBAL = {}
+    document.__GLOBAL_SHARED_STATE = {}
     CSS_BY_NAME.clear()
   }
   if (global.document === void 0) {
@@ -19,8 +21,12 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     global.Node = Node
   }
   try {
+    document.__GLOBAL = {}
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
+    if (element.startSSR) {
+      element.startSSR(props)
+    }
     const prop = riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
     const stylesheet = new SheetsRegistry()
 
@@ -96,7 +102,9 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     shared = xss(JSON.stringify(shared))
     const g = xss(JSON.stringify(document.__GLOBAL_SHARED_STATE || {}))
     const style = stylesheet.toString()
-    
+    if (element.endSSR) {
+      element.endSSR(props)
+    }
     element.unmount()
     cleanup()
 
