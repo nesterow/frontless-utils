@@ -13,6 +13,7 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     global.document = undefined
     global.window = undefined
     global.Node = undefined
+    CSS_BY_NAME.clear()
   }
   if (global.document === void 0) {
     const {JSDOM} = require('jsdom')
@@ -101,9 +102,8 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     
     element.unmount()
     cleanup()
-    CSS_BY_NAME.clear();
 
-    return Promise.resolve({output, state, shared, layout, head, stylesheet: style, Global: g })
+    return Promise.resolve({output, state, shared, layout, head, stylesheet: style, Global: g, page: element })
   }
   catch(e) {
     return Promise.reject(e)

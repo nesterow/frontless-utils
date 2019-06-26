@@ -1,6 +1,6 @@
 {
   "name": "@frontless/core",
-  "version": "1.0.0-rc.5",
+  "version": "1.0.0-rc.6",
   "description": "Frontless Stack",
   "main": "index.js",
   "author": "Anton Nesterov",
