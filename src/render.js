@@ -2,25 +2,23 @@ const riot = require('riot')
 const {SheetsRegistry} = require('jss')
 const xss = require("xss")
 const {CSS_BY_NAME} = riot.__.cssManager;
+const mutex = require('./mutex')
 /** 
  * Render a riot tag.
  * This method resolves all `fetch()` operations including components children
  * @return {Promise<{output: String, state: Object, layout: string}>}
  * */
 module.exports = async function renderAsync(tagName, component, props, sharedAttributes) {
-  
   const cleanup = () => {
     document.__GLOBAL = {}
     document.__GLOBAL_SHARED_STATE = {}
     CSS_BY_NAME.clear()
+    mutex.release()
   }
-  if (global.document === void 0) {
-    const {JSDOM} = require('jsdom')
-    const {document,Node} = new JSDOM().window
-    global.document = document
-    global.Node = Node
-  }
+  const {JSDOM} = require('jsdom')
+  const {document,Node} = new JSDOM().window
   try {
+    await mutex.lock({document, Node})
     document.__GLOBAL = {}
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
@@ -39,7 +37,7 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
       element.res = props.res;
       if (element.fetch)
         await element.fetch(props);
-
+      mutex.release()
       if (element.onServer)
         element.onServer(props.req, props.res, props.next);
 
@@ -60,6 +58,8 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
       if (instance) {
         instance.req = props.req;
         instance.res = props.res;
+        await mutex.lock({document, Node})
+        
         if (instance.fetch)
           await instance.fetch(props);
         
@@ -76,9 +76,11 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
         if (instance.stylesheet) {
           stylesheet.add(instance.stylesheet)
         }
+        mutex.release()
       }
     }
 
+    await mutex.lock({document, Node})
     element.update({})
 
     if (element.onRendered) {
@@ -111,6 +113,7 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     return Promise.resolve({output, state, shared, layout, head, stylesheet: style, Global: g, page: element })
   }
   catch(e) {
+    mutex.release()
     return Promise.reject(e)
   }
 }
