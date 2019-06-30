@@ -1,25 +1,25 @@
 const EventEmitter = require('events');
 
-let locked = false;
 const ee = new EventEmitter();
 ee.setMaxListeners(0);
 
 module.exports = {
-
+    locked: false,
     lock: ({document, Node}) =>
       new Promise(resolve => {
 
-        if (!locked) {
-          locked = true;
+        if (!this.locked) {
+          this.locked = true;
           global.document = document;
           global.Node = Node;
           return resolve();
         }
         
         const tryAcquire = () => {
-          if (locked) {
-            global.document = null;
-            global.Node = null;
+          if (!this.locked) {
+            global.document = document;
+            global.Node = Node;
+            this.locked = true;
             ee.removeListener('release', tryAcquire);
             return resolve();
           }
@@ -29,7 +29,7 @@ module.exports = {
       }),
 
     release: () => {
-      locked = false;
+      this.locked = false;
       setImmediate(() => ee.emit('release'));
     },
 

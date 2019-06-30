@@ -3,6 +3,7 @@ const {SheetsRegistry} = require('jss')
 const xss = require("xss")
 const {CSS_BY_NAME} = riot.__.cssManager;
 const mutex = require('./mutex')
+const {JSDOM} = require('jsdom')
 /** 
  * Render a riot tag.
  * This method resolves all `fetch()` operations including components children
@@ -15,10 +16,9 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     CSS_BY_NAME.clear()
     mutex.release()
   }
-  const {JSDOM} = require('jsdom')
   const {document,Node} = new JSDOM().window
+  await mutex.lock({document, Node})
   try {
-    await mutex.lock({document, Node})
     document.__GLOBAL = {}
     const root = document.createElement(tagName)
     const element = riot.component(component)(root, props)
@@ -37,7 +37,6 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
       element.res = props.res;
       if (element.fetch)
         await element.fetch(props);
-      mutex.release()
       if (element.onServer)
         element.onServer(props.req, props.res, props.next);
 
@@ -58,8 +57,6 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
       if (instance) {
         instance.req = props.req;
         instance.res = props.res;
-        await mutex.lock({document, Node})
-        
         if (instance.fetch)
           await instance.fetch(props);
         
@@ -76,11 +73,9 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
         if (instance.stylesheet) {
           stylesheet.add(instance.stylesheet)
         }
-        mutex.release()
       }
     }
 
-    await mutex.lock({document, Node})
     element.update({})
 
     if (element.onRendered) {
@@ -109,7 +104,6 @@ module.exports = async function renderAsync(tagName, component, props, sharedAtt
     }
     element.unmount()
     cleanup()
-
     return Promise.resolve({output, state, shared, layout, head, stylesheet: style, Global: g, page: element })
   }
   catch(e) {
