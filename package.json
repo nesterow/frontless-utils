@@ -1,6 +1,6 @@
 {
   "name": "@frontless/core",
-  "version": "1.0.0-rc.12",
+  "version": "1.0.0-rc.14",
   "description": "Frontless Stack",
   "main": "index.js",
   "author": "Anton Nesterov",
@@ -8,7 +8,7 @@
   "dependencies": {
     "ejs": "^2.6.2",
     "qs": "^6.7.0",
-    "riot": "^4.2.0",
+    "riot": "^4.3.1",
     "xss": "^1.0.6"
   }
 }
