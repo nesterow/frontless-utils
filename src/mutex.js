@@ -20,7 +20,7 @@ module.exports = {
           if (locked) {
             global.document = null;
             global.Node = null;
-            ee.removeListener(key, tryAcquire);
+            ee.removeListener('release', tryAcquire);
             return resolve();
           }
         };
