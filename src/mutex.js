@@ -31,6 +31,7 @@ module.exports = {
     release: () => {
       this.locked = false;
       setImmediate(() => ee.emit('release'));
+      return global.document
     },
 
   };
