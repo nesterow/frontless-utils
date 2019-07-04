@@ -42,31 +42,34 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
       return SHARED_ATTRS.concat(inst.shared || [])
     }
 
-    if (element) {
-      element.req = props.req;
-      element.res = props.res;
+    const FETCH_STACK = []
 
-      if (element.beforeRequest)
-        element.beforeRequest(props);
+    element.req = props.req;
+    element.res = props.res;
 
-      if (element.fetch)
-        await element.fetch(props);
+    if (element.beforeRequest)
+      element.beforeRequest(props);
 
-      if (element.afterRequest)
-        element.afterRequest(props);
+    if (element.fetch)
+      FETCH_STACK.push(new Promise((resolve, reject)=>{
+        element.fetch(props)
+          .then(() => {
+            state[element.id || component.name] = element.state
+            shared[element.id || component.name] = getShared(element).map(
+              (name) => ({name, data: element [name]})
+            )
+            if (element.stylesheet) {
+              stylesheet.add(element.stylesheet)
+            }
+            if (element.afterRequest)
+              element.afterRequest(props);
+            resolve()
+          })
+          .catch(reject)
+      }))
 
-      if (element.onServer) // deprecated!
-        element.onServer(props.req, props.res, props.next);
-
-      state[element.id || component.name] = element.state
-      shared[element.id || component.name] = getShared(element).map(
-        (name) => ({name, data: element [name]})
-      )
-      
-      if (element.stylesheet) {
-        stylesheet.add(element.stylesheet)
-      }
-    }
+    if (element.onServer) // deprecated!
+      element.onServer(props.req, props.res, props.next);
 
     const elements = element.$$('*')
     const rendered = []
@@ -83,27 +86,35 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
           instance.beforeRequest(props);
 
         if (instance.fetch)
-          await instance.fetch(props);
-
-        if (instance.afterRequest)
-          instance.afterRequest(props);
+          FETCH_STACK.push(new Promise((resolve, reject)=>{
+            instance.fetch(props)
+              .then(() => {
+                state[instance.id || instance.name] = instance.state
+                shared[instance.id || instance.name] = getShared(instance).map(
+                  (name) => ({name, data: instance [name]})
+                )
+                if (instance.stylesheet) {
+                  stylesheet.add(instance.stylesheet)
+                }
+                if (instance.afterRequest) {
+                  instance.afterRequest(props);
+                }
+                resolve()
+              })
+              .catch(reject)
+          }))
         
-        if (instance.onServer) // deprecated!
-          instance.onServer(props.req, props.res, props.next);
-
-        state[instance.id || instance.name] = instance.state
-        shared[instance.id || instance.name] = getShared(instance).map(
-          (name) => ({name, data: instance [name]})
-        )
-
         if (instance.onRendered) {
           rendered.push({instance, props,})
         }
-        if (instance.stylesheet) {
-          stylesheet.add(instance.stylesheet)
-        }
+        
+        if (instance.onServer) // deprecated!
+          instance.onServer(props.req, props.res, props.next);
+        
       }
     }
+    
+    await Promise.all(FETCH_STACK)
 
     rendered.map(e => {
       e.instance.onRendered(e.props)
