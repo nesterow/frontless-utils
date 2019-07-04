@@ -3,7 +3,6 @@ const {SheetsRegistry} = require('jss')
 const xss = require("xss")
 const mutex = require('./mutex')
 const {JSDOM} = require('jsdom')
-
 /** 
  * Render a riot tag.
  * This method resolves all `fetch()` operations including components children
@@ -33,6 +32,7 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
     const root = document.createElement(tagName)
     const Riot = riot.di({document, Node})
     const element = Riot.component(component)(root, props)
+    mutex.release()
     const prop = Riot.__.globals.DOM_COMPONENT_INSTANCE_PROPERTY
     const stylesheet = new SheetsRegistry()
 
@@ -126,7 +126,7 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
     shared = xss(JSON.stringify(shared))
     const g = xss(JSON.stringify(document.__GLOBAL_SHARED_STATE || {}))
     const style = stylesheet.toString()
-    
+
     element.unmount()
     cleanup(Riot)
 
