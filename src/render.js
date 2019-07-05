@@ -81,7 +81,7 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
       if (instance) {
         instance.req = props.req;
         instance.res = props.res;
-        
+
         if (instance.beforeRequest)
           instance.beforeRequest(props);
 
@@ -104,9 +104,7 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
               .catch(reject)
           }))
         
-        if (instance.onRendered) {
-          rendered.push({instance, props,})
-        }
+        rendered.push({instance, props,})
         
         if (instance.onServer) // deprecated!
           instance.onServer(props.req, props.res, props.next);
@@ -116,8 +114,12 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
     
     await Promise.all(FETCH_STACK)
 
-    rendered.map(e => {
-      e.instance.onRendered(e.props)
+    rendered.map(({props, instance}) => {
+      if (instance.onRendered) instance.onRendered(props);
+      state[instance.id || instance.name] = instance.state
+      shared[instance.id || instance.name] = getShared(instance).map(
+        (name) => ({name, data: instance [name]})
+      )
     })
 
     if (element.onRendered) {
