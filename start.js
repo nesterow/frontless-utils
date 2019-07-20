@@ -28,7 +28,7 @@ function SSMV(component) {
 
 riot.install(SSMV)
 
-export default function factory({ components, before, after }) {
+module.exports = function ({ components, before, after }) {
 
     before(components);
 
