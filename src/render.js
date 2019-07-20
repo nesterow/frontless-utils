@@ -87,21 +87,25 @@ module.exports = async function renderAsync(tagName, component, props, SHARED_AT
 
         if (instance.fetch)
           FETCH_STACK.push(new Promise((resolve, reject)=>{
-            instance.fetch(props)
-              .then(() => {
-                state[instance.id || instance.name] = instance.state
-                shared[instance.id || instance.name] = getShared(instance).map(
-                  (name) => ({name, data: instance [name]})
-                )
-                if (instance.stylesheet) {
-                  stylesheet.add(instance.stylesheet)
-                }
-                if (instance.afterRequest) {
-                  instance.afterRequest(props);
-                }
-                resolve()
-              })
-              .catch(reject)
+            try {
+              instance.fetch(props)
+                .then(() => {
+                  state[instance.id || instance.name] = instance.state
+                  shared[instance.id || instance.name] = getShared(instance).map(
+                    (name) => ({name, data: instance [name]})
+                  )
+                  if (instance.stylesheet) {
+                    stylesheet.add(instance.stylesheet)
+                  }
+                  if (instance.afterRequest) {
+                    instance.afterRequest(props);
+                  }
+                  resolve()
+                })
+                .catch(reject)
+            } catch(e) {
+              resolve()
+            }
           }))
         
         rendered.push({instance, props,})
