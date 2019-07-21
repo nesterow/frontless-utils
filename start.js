@@ -69,7 +69,18 @@ module.exports = function ({ components, before, after }) {
           document.body.classList.add('disabled')
           const ComponentImplementation = components.find((tag) => tag.module.default.name === root.getAttribute('is') )
           const component = ComponentImplementation.module.default;
+          
+          if (typeof component.exports === 'function')
+            component.exports = component.exports();
+          
+          const hydrated = component.exports.onHydrated || function() {};
+          component.exports.onHydrated = function() {
+            hydrated.apply(this, arguments)
+            after()
+          }.bind(component.exports)
+          
           hydrate(component)(root)
+          after()
           setTimeout(() => document.body.classList.remove('disabled'))
         }
       
@@ -79,7 +90,6 @@ module.exports = function ({ components, before, after }) {
         const fromCache = !!document.body.getAttribute('from-cache')
         if (!fromCache) {
           initialize();
-          after()
         }
       });
       
