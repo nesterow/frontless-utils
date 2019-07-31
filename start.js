@@ -1,6 +1,6 @@
 const riot = require('riot')
 const xss = require('xss')
-const {assign, debounce} = require('lodash')
+const {assign} = require('lodash')
 const hydrate = require('@riotjs/hydrate')
 const EventBus = require('eventbusjs')
 const Turbolinks = require('turbolinks')
@@ -72,27 +72,34 @@ module.exports = function ({ components, before, after }) {
           
           if (typeof component.exports === 'function')
             component.exports = component.exports();
-          
+
           const hydrated = component.exports.onHydrated || function() {};
           component.exports.onHydrated = function() {
-            hydrated.apply(this, arguments)
-            after()
-          }.bind(component.exports)
-          
+            setTimeout(() => {
+              document.dispatchEvent(new CustomEvent('frontless:loaded', { detail: true }))
+            })
+            hydrated.bind(this)()
+          }
+          .bind(component.exports)
           hydrate(component)(root)
-          after()
-          setTimeout(() => document.body.classList.remove('disabled'))
+
+          setTimeout(() => {
+            document.body.classList.remove('disabled')
+            after()
+          })
         }
       
       }
       window.initialize = initialize;
+
+      if(window.getEventListeners) (getEventListeners(document)['turbolinks:load'] || []).map((e) => {
+        document.removeEventListener('turbolinks:load', e.listener)
+      })
       document.addEventListener('turbolinks:load', () => {
         const fromCache = !!document.body.getAttribute('from-cache')
         if (!fromCache) {
           initialize();
         }
       });
-      
-      document.addEventListener('hmr:updated', () => setTimeout(() => location.reload(), 1800))
 
 }
