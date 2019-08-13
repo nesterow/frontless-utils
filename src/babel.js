@@ -51,6 +51,9 @@ module.exports = (options) => addHook(
       ]
     }).code
 
+    if (!existsSync(BUILD))
+      mkdirSync(BUILD);
+
     writeFileSync(file(filename), build)
     return build
 
