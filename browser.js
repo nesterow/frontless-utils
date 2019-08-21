@@ -1,5 +1,5 @@
 
-const qs = require('querystring')
+const qs = require('query-string')
 
 
 module.exports.isServer = (typeof window === 'undefined')
@@ -34,7 +34,6 @@ const unescapeArg = (str = '') => {
 const getURL = (argsuments = [], query = {}, pathname = null) => {
   const args = argsuments.map( e => escapeArg(e)).join(';')
   const path = (pathname || location.pathname).split('@') [0]
-  console.log(args)
   return `${path}${args.trim() ? '@' + args : ''}?${qs.stringify(query)}`
 }
 
